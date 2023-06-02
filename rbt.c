@@ -34,7 +34,7 @@ void rbt_free(rbt *t)
     free(t);
 }
 
-node *rbt_search (rbt *t, int key)
+node *rbt_search(rbt *t, int key)
 {
     node *x = t->root;
 
@@ -234,8 +234,8 @@ int rbt_delete(rbt *t, int key)
     else
     {
         rbt r;
-        r.root = z->right;
-        y = rbt_min(&r);
+        r.root = z->left;
+        y = rbt_max(&r);
 
         z->key = y->key;
     }
@@ -250,7 +250,7 @@ int rbt_delete(rbt *t, int key)
             printf("Ошибка выделения памяти.\n");
             exit(-1);
         }
-        n->color  = 1;
+        n->color = 1;
         x = n;
     }
 
@@ -280,11 +280,13 @@ int rbt_delete(rbt *t, int key)
 
                 if (x == x->parent->left)
                 {
+//                    printf("left\n");
                     rbt_rotate_left(t, x->parent);
                     w = x->parent->right;
                 }
                 else
                 {
+//                    printf("right\n");
                     rbt_rotate_right(t, x->parent);
                     w = x->parent->left;
                 }
@@ -378,6 +380,8 @@ void rbt_print(const node *t)
         else printf("root) ");
 
         rbt_print(t->right);
+
+        printf("\n");
     }
 }
 
@@ -405,6 +409,8 @@ int rbt_draw_node(node *to_draw, int x, int y, int shift)
 
 void rbt_draw(rbt *t)
 {
+//    rbt_print(t->root);
+
     cleardevice();
     rbt_draw_node(t->root, 600, 40, 200);
     sleep(1);
