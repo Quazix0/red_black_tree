@@ -4,6 +4,7 @@
 typedef struct node {
     int key; /// значение
     int color; /// 0 - красный, 1 - чёрный
+    int is_nil; /// является ли nil-узлом
     struct node *left, *right, *parent; /// указатели на детей и родителя
 } node;
 
@@ -23,10 +24,10 @@ void rbt_free(rbt *t);
 node *rbt_serach (rbt *t, int key);
 /// находит элемент с заданным ключом и возвращает указатель на него, NULL если отсутсвует
 
-node *rbt_min (rbt *t);
+node *rbt_min (node *t);
 /// возвращает указатель на минимальный элемент
 
-node *rbt_max (rbt *t);
+node *rbt_max (node *t);
 /// возвращает указатель на максимальный элемент
 
 void rbt_rotate_left (rbt *t, node *x);
@@ -41,7 +42,7 @@ node *rbt_bst_insert (rbt *t, int key);
 int rbt_insert (rbt *t, int key);
 /// вставка элемента в дерево, возвращает 0 в случае успеха, -1 если элемент уже есть
 
-int rbt_delete (rbt *t, int key);
+int rbt_delete(rbt *t, int key);
 /// удаления элемента дерева, возвращает 0 в случае успеха, -1 если элемент отстутсвует
 
 void rbt_print(const node *t);
@@ -52,5 +53,21 @@ int rbt_draw_node(node *to_draw, int x, int y, int iter);
 
 void rbt_draw(rbt *t);
 /// функция отрисовки дерева в графическом окне
+
+void delete_case1(rbt *t, node *n);
+
+void delete_case2(rbt *t, node *n);
+
+void delete_case3(rbt *t, node *n);
+
+void delete_case4(rbt *t, node *n);
+
+void delete_case5(rbt *t, node *n);
+
+void delete_case6(rbt *t, node *n);
+
+node *brother(node *n);
+
+int nil_or_black(node *n);
 
 #endif // RBT_H_INCLUDED

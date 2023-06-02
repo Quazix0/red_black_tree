@@ -48,17 +48,17 @@ node *rbt_search(rbt *t, int key)
     return NULL;
 }
 
-node *rbt_min (rbt *t)
+node *rbt_min(node *t)
 {
-    node *x = t->root;
+    node *x = t;
     if (!x) return NULL;
     while (x->left) x = x->left;
     return x;
 }
 
-node *rbt_max (rbt *t)
+node *rbt_max(node *t)
 {
-    node *x = t->root;
+    node *x = t;
     if (!x) return NULL;
     while (x->right) x = x->right;
     return x;
@@ -68,7 +68,7 @@ node *rbt_max (rbt *t)
 void rbt_rotate_left (rbt *t, node *x)
 {
     node *y = x->right;
-    assert (y);
+    assert(y);
 
 
     x->right = y->left;
@@ -97,7 +97,7 @@ void rbt_rotate_left (rbt *t, node *x)
 void rbt_rotate_right (rbt *t, node *x)
 {
     node *y = x->left;
-    assert (y);
+    assert(y);
 
 
     x->left = y->right;
@@ -136,6 +136,7 @@ node *rbt_bst_insert(rbt *t, int key)
     z->key = key;
     z->color = 0;
     z->left = z->right = NULL;
+    z->is_nil = 0;
 
     while (x)
     {
@@ -203,8 +204,7 @@ int rbt_insert(rbt *t, int key)
             x->parent->color         = 1;
             x->parent->parent->color = 0;
 
-            x == x->parent->left ? rbt_rotate_right(t, x->parent->parent)
-                                 : rbt_rotate_left (t, x->parent->parent);
+            x == x->parent->left ? rbt_rotate_right(t, x->parent->parent) : rbt_rotate_left (t, x->parent->parent);
         }
     }
 
@@ -229,16 +229,12 @@ int rbt_delete(rbt *t, int key)
         return -1;
     }
 
-    if (!z->left || !z->right)
-         y = z;
-    else
+    if (z->left && z->right)
     {
-        rbt r;
-        r.root = z->left;
-        y = rbt_max(&r);
-
+        y = rbt_max(z->left);
         z->key = y->key;
     }
+    else y = z;
 
     x = y->left ? y->left : y->right;
 
@@ -251,103 +247,31 @@ int rbt_delete(rbt *t, int key)
             exit(-1);
         }
         n->color = 1;
+        n->is_nil = 1;
         x = n;
     }
 
     x->parent = y->parent;
 
-    if (!y->parent)
-        t->root = x;
-    else
-    {
-        if (y == y->parent->left)
-            y->parent->left = x;
-        else
-            y->parent->right = x;
-    }
+    if (!y->parent) t->root = x;
+    else if (y == y->parent->left) y->parent->left = x;
+    else y->parent->right = x;
+
+//    printf("a\n");
 
     if (y->color == 1)
     {
-
-        while (x != t->root && x->color == 1)
+        if (x->color == 0) x->color = 1;
+        else
         {
-            node *w = x == x->parent->left ? x->parent->right : x->parent->left;
-
-            if (w->color == 0)
-            {
-                w->color = 1;
-                x->parent->color = 0;
-
-                if (x == x->parent->left)
-                {
-//                    printf("left\n");
-                    rbt_rotate_left(t, x->parent);
-                    w = x->parent->right;
-                }
-                else
-                {
-//                    printf("right\n");
-                    rbt_rotate_right(t, x->parent);
-                    w = x->parent->left;
-                }
-            }
-            if ((!w->left  || w->left->color  == 1) &&
-                (!w->right || w->right->color == 1)
-               )
-            {
-                w->color = 0;
-                x = x->parent;
-                if (x->color == 0)
-                {
-                    x->color = 1;
-                    x = t->root;
-                }
-            }
-            else
-            {
-                if ((x == x->parent->left  && (!w->right || w->right->color == 1)) ||
-                    (x == x->parent->right && (!w->left  || w->left->color  == 1))
-                   )
-                {
-                    w->color = 0;
-                    if (x == x->parent->left)
-                    {
-                        w->left->color = 1;
-                        rbt_rotate_right(t, w);
-                        w = x->parent->right;
-                    }
-                    else
-                    {
-                        w->right->color = 1;
-                        rbt_rotate_left(t, w);
-                        w = x->parent->left;
-                    }
-                }
-                w->color = x->parent->color;
-                x->parent->color = 1;
-
-                if (x == x->parent->left)
-                {
-                    w->right->color = 1;
-                    rbt_rotate_left(t, x->parent);
-//                    printf("left\n");
-                }
-                else
-                {
-                    w->left->color = 1;
-                    rbt_rotate_right(t, x->parent);
-//                    printf("right\n");
-                }
-
-                x = t->root;
-            }
+//            printf("a\n");
+            delete_case1(t, x);
         }
-
-        x->color = 1;
-
     }
+
     free(y);
-//    rbt_draw(t);
+
+    rbt_draw(t);
 
     if (n)
     {
@@ -363,11 +287,8 @@ int rbt_delete(rbt *t, int key)
         free(n);
     }
 
-    rbt_draw(t);
-
     return 0;
 }
-
 
 void rbt_print(const node *t)
 {
@@ -388,6 +309,7 @@ void rbt_print(const node *t)
 int rbt_draw_node(node *to_draw, int x, int y, int shift)
 {
     if (!to_draw) return -1;
+    if (to_draw->is_nil) return -1;
 
     char key[5];
     itoa(to_draw->key, key, 10);
@@ -416,4 +338,134 @@ void rbt_draw(rbt *t)
     sleep(1);
 }
 
+void delete_case1(rbt *t, node *n)
+{
+    if (n->parent != NULL)
+        delete_case2(t, n);
+}
 
+void delete_case2(rbt *t, node *n)
+{
+    node *s = brother(n);
+
+//    printf("a\n");
+
+	if (s->color == 0)
+    {
+		n->parent->color = 0;
+		s->color = 1;
+
+		rbt_draw(t);
+
+		if (n == n->parent->left) rbt_rotate_left(t, n->parent);
+		else rbt_rotate_right(t, n->parent);
+	}
+	delete_case3(t, n);
+}
+
+void delete_case3(rbt *t, node *n)
+{
+    node *s = brother(n);
+
+//    printf("a\n");
+
+	if (n->parent->color == 1 && s->color == 1 && nil_or_black(s->left) && nil_or_black(s->right))
+    {
+		s->color = 0;
+
+		rbt_draw(t);
+
+		delete_case1(t, n->parent);
+	}
+	else delete_case4(t, n);
+}
+
+void delete_case4(rbt *t, node *n)
+{
+    struct node *s = brother(n);
+
+//    printf("%d\n", s->key);
+
+	if (n->parent->color == 0 && s->color == 1 && nil_or_black(s->left) && nil_or_black(s->right))
+    {
+//		printf("a\n");
+
+		s->color = 0;
+		n->parent->color = 1;
+
+//		printf("a\n");
+
+		rbt_draw(t);
+	}
+	else delete_case5(t, n);
+}
+
+void delete_case5(rbt *t, node *n)
+{
+    node *s = brother(n);
+
+//    printf("a\n");
+
+	if  (s->color == 1)
+    {
+		if (n == n->parent->left && s->right->color == 1 && s->left->color == 0)
+        {
+			s->color = 0;
+			s->left->color = 1;
+
+			rbt_draw(t);
+
+			rbt_rotate_right(t, s);
+		}
+		else if (n == n->parent->right && s->left->color == 1 && s->right->color == 0)
+        {
+			s->color = 0;
+			s->right->color = 1;
+
+			rbt_draw(t);
+
+			rbt_rotate_left(t, s);
+		}
+	}
+	delete_case6(t, n);
+}
+
+void delete_case6(rbt *t, node *n)
+{
+    node *s = brother(n);
+
+//    printf("a\n");
+
+	s->color = n->parent->color;
+    n->parent->color = 1;
+
+    rbt_draw(t);
+
+	if (n == n->parent->left)
+    {
+        s->right->color = 1;
+
+        rbt_draw(t);
+
+		rbt_rotate_left(t, n->parent);
+	}
+	else
+    {
+		s->left->color = 1;
+
+		rbt_draw(t);
+
+		rbt_rotate_right(t, n->parent);
+	}
+}
+
+node *brother(node *n)
+{
+    return n == n->parent->left ? n->parent->right : n->parent->left;
+}
+
+int nil_or_black(node *n)
+{
+    if (!n) return 1;
+    else return n->color;
+}
